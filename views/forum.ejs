@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #6b8a78;
+            margin: 0;
+            padding: 0;
+        }
+
+        #forum-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #4e5535;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            color: #fff;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #fff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .post {
+            background-color: #8c8e66;
+            border: none;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .avatar,
+        .avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .avatar-small {
+            width: 30px;
+            height: 30px;
+        }
+
+        .username {
+            font-weight: bold;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .post-content p {
+            color: #fff;
+            background-color: #4e5535;
+            border: none;
+            margin: 0;
+            padding: 10px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .post-content img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .post-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .post-actions i {
+            font-size: 20px;
+            color: #fff;
+            margin-left: 10px;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .post-actions i:hover {
+            color: #d0d0d0;
+        }
+
+        .comment {
+            background-color: #6b8a78;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            display: flex;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .comment img {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .comment p {
+            margin: 0;
+            color: #fff;
+        }
+
+        .comment-input {
+            margin-top: 10px;
+            display: none;
+            display: flex;
+            align-items: center;
+        }
+
+        .comment-input input {
+            flex: 1;
+            background-color: #8c8e66;
+            border: none;
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+
+        .comment-input input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .comment-input button {
+            background-color: #8c8e66;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 16px;
+        }
+
+        .comment-input button:hover {
+            background-color: #6b8a78;
+        }
+
+        .pagination button {
+            background-color: #8c8e66;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            margin-right: 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .pagination button.active {
+            background-color: #6b8a78;
+        }
+
+        .pagination button:hover {
+            background-color: #6b8a78;
+        }
+
+        #post-form {
+            background-color: #8c8e66;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-container {
+            margin-bottom: 10px;
+        }
+
+        .input-container input[type="text"] {
+            width: 100%;
+            background-color: #4e5535;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #post-form input[type="file"] {
+            display: none;
+        }
+
+        #post-form label,
+        #post-form button {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #4e5535;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 14px;
+            border: none;
+            margin: 0;
+        }
+
+        #post-form label:hover,
+        #post-form button:hover {
+            background-color: #6b8a78;
+        }
+
+        #post-form input[type="text"]::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .like-animation {
+            animation: like 0.5s ease;
+        }
+
+        @keyframes like {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.5);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* 添加模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            padding-top: 50px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            overflow: auto;
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90vh;
+            object-fit: contain;
+        }
+
+        .close-modal {
+            position: absolute;
+            right: 35px;
+            top: 15px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-modal:hover {
+            color: #bbb;
+        }
+
+        /* 添加图片悬停效果 */
+        .post-content img {
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .post-content img:hover {
+            opacity: 0.8;
+        }
+
+        .comment-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .comment-actions i {
+            font-size: 14px;
+            color: #fff;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .comment-actions i:hover {
+            color: #d0d0d0;
+        }
+
+        .post-meta,
+        .comment-meta {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 5px;
+        }
+
+        .post-time,
+        .comment-time {
+            margin-right: 15px;
+        }
+
+        .post-ip,
+        .comment-ip {
+            font-family: monospace;
+        }
+
+        .comment-content {
+            flex: 1;
+            margin-right: 10px;
+        }
+
+        .comment {
+            display: flex;
+            align-items: flex-start;
+            padding: 10px;
+            margin-top: 10px;
+            background-color: #6b8a78;
+            border-radius: 8px;
+        }
+
+        .post-stats {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #4e5535;
+            color: #fff;
+            border-radius: 8px;
+        }
+
+        .likes-info,
+        .shares-info {
+            margin: 5px 0;
+        }
+
+        .stats-count {
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .users-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .user-tag {
+            display: flex;
+            align-items: center;
+            background-color: #6b8a78;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #fff;
+        }
+
+        .user-tag:hover {
+            background-color: #8c8e66;
+        }
+
+        .mini-avatar {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .user-profile {
+            background-color: #4e5535;
+            padding: 20px;
+            border-radius: 8px;
+            color: #fff;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 30px;
+            background-color: #8c8e66;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+
+        .back-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #8c8e66;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .back-btn:hover {
+            background-color: #6b8a78;
+        }
+
+        .delete-btn {
+            background-color: #8c8e66;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .delete-btn:hover {
+            background-color: #6b8a78;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="forum-container">
+        <h1>论坛</h1>
+        <form id="post-form">
+            <div class="input-container">
+                <input type="text" id="post-content" placeholder="分享美好生活......" required>
+            </div>
+            <div class="button-container">
+                <input type="file" id="post-image" accept="image/*">
+                <label for="post-image">选择图片</label>
+                <button type="submit">发送</button>
+            </div>
+        </form>
+        <div id="posts-container"></div>
+        <div class="pagination" id="pagination"></div>
+    </div>
+
+    <!-- 添加图片模态框 -->
+    <div id="imageModal" class="modal">
+        <span class="close-modal">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
+
+    <script>
+        // 获取当前用户信息（假设已经存储在 localStorage 中）
+        const currentUser = JSON.parse(localStorage.getItem('loggedInUser'));
+        if (!currentUser) {
+            window.location.href = '/login.html';
+        }
+
+        const socket = io();
+        let currentPage = 1;
+
+        // 加载帖子
+        async function loadPosts(page = 1) {
+            try {
+                const response = await fetch(`/api/posts?page=${page}`);
+                const data = await response.json();
+                displayPosts(data.posts);
+                updatePagination(data.totalPages, data.currentPage);
+            } catch (err) {
+                console.error('Error loading posts:', err);
+            }
+        }
+
+        // 显示帖子
+        function displayPosts(posts) {
+            const container = document.getElementById('posts-container');
+            container.innerHTML = posts.map(post => `
+                <div class="post" data-post-id="${post._id}">
+                    <div class="user-info">
+                        <img src="${post.avatar}" alt="Avatar" class="avatar" onclick="loadUserProfile('${post.userId}')">
+                        <span class="username" onclick="loadUserProfile('${post.userId}')" style="cursor: pointer;">${post.username}</span>
+                        <div class="post-meta">
+                            <span class="post-time">${new Date(post.createdAt).toLocaleString()}</span>
+                            <span class="post-ip">IP: ${post.ipAddress}</span>
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        <p>${post.content}</p>
+                        ${post.image ? `<img src="${post.image}" alt="Post Image" onclick="openImageModal(this.src)">` : ''}
+                    </div>
+                    <div class="post-actions">
+                        <i class="fas fa-thumbs-up" onclick="handleLike('${post._id}', this)"></i>
+                        <i class="fas fa-comment" onclick="showCommentInput('${post._id}')"></i>
+                        ${post.userId !== currentUser.id ? `<i class="fas fa-share" onclick="handleShare('${post._id}')"></i>` : ''}
+                        ${post.userId === currentUser.id ? `<i class="fas fa-trash" onclick="deletePost('${post._id}')"></i>` : ''}
+                    </div>
+                    <div class="comments">
+                        ${post.comments.map(comment => `
+                            <div class="comment">
+                                <img src="${comment.avatar}" alt="Avatar" class="avatar-small" onclick="loadUserProfile('${comment.userId}')">
+                                <div class="comment-content">
+                                    <span class="username" onclick="loadUserProfile('${comment.userId}')" style="cursor: pointer;">${comment.username}</span>
+                                    <p>${comment.content}</p>
+                                    <div class="comment-meta">
+                                        <span class="comment-time">${new Date(comment.createdAt).toLocaleString()}</span>
+                                        <span class="comment-ip">IP: ${comment.ipAddress}</span>
+                                    </div>
+                                </div>
+                                <div class="comment-actions">
+                                    <i class="fas fa-share" onclick="handleCommentShare('${post._id}', '${comment._id}')" title="转发评论"></i>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="comment-input" style="display: none;">
+                        <input type="text" placeholder="写下你的评论...">
+                        <button onclick="submitComment('${post._id}', this)">发送</button>
+                    </div>
+                    <div class="post-stats">
+                        <div class="likes-info">
+                            <span class="stats-count">${post.likes} 人点赞</span>
+                            <div class="users-list">
+                                ${post.likedBy.map(user => `
+                                    <span class="user-tag" onclick="loadUserProfile('${user.userId}')">
+                                        <img src="${user.avatar}" class="mini-avatar" alt="${user.username}">
+                                        ${user.username}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                        <div class="shares-info">
+                            <span class="stats-count">${post.shares} 人转发</span>
+                            <div class="users-list">
+                                ${post.sharedBy.map(user => `
+                                    <span class="user-tag" onclick="loadUserProfile('${user.userId}')">
+                                        <img src="${user.avatar}" class="mini-avatar" alt="${user.username}">
+                                        ${user.username}
+                                    </span>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 发送新帖子
+        document.getElementById('post-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const content = document.getElementById('post-content').value;
+            const imageInput = document.getElementById('post-image');
+            const file = imageInput.files[0];
+
+            if (!content.trim() && !file) return;
+
+            const formData = new FormData();
+            formData.append('userId', currentUser.id);
+            formData.append('content', content);
+            if (file) {
+                formData.append('image', file);
+            }
+
+            try {
+                const response = await fetch('/api/posts', {
+                    method: 'POST',
+                    body: formData,
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to create post');
+                }
+                const data = await response.json();
+                document.getElementById('post-content').value = '';
+                imageInput.value = '';
+
+                // 重新加载第一页的帖子
+                await loadPosts(1);
+
+                // 获取第一个帖子元素并平滑滚动到它的位置
+                const firstPost = document.querySelector('.post');
+                if (firstPost) {
+                    firstPost.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            } catch (err) {
+                console.error('Error creating post:', err);
+            }
+        });
+        // 提交评论
+        function submitComment(postId, button) {
+            const input = button.previousElementSibling;
+            const content = input.value;
+            if (!content.trim()) return;
+
+            socket.emit('newComment', {
+                postId: postId,
+                userId: currentUser.id,
+                content: content
+            });
+
+            input.value = '';
+            button.parentElement.style.display = 'none';
+        }
+
+        // 显示评论��入框
+        function showCommentInput(postId) {
+            const post = document.querySelector(`[data-post-id="${postId}"]`);
+            const commentInput = post.querySelector('.comment-input');
+            commentInput.style.display = 'flex';
+        }
+
+        // 更新分页
+        function updatePagination(totalPages, currentPage) {
+            const pagination = document.getElementById('pagination');
+            pagination.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.onclick = () => loadPosts(i);
+                if (i === currentPage) {
+                    button.classList.add('active');
+                }
+                pagination.appendChild(button);
+            }
+        }
+
+        // 删除帖子
+        async function deletePost(postId) {
+            if (!confirm('确定要删除这帖子吗？')) return;
+
+            try {
+                const response = await fetch(`/api/posts/${postId}`, {
+                    method: 'DELETE',
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to delete post');
+                }
+                loadPosts(currentPage);
+            } catch (err) {
+                console.error('Error deleting post:', err);
+            }
+        }
+        // 点赞功能
+        async function handleLike(postId, element) {
+            element.classList.add('like-animation');
+            setTimeout(() => {
+                element.classList.remove('like-animation');
+            }, 500);
+
+            try {
+                const response = await fetch(`/api/posts/${postId}/like`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: currentUser.id }),
+                });
+                const updatedPost = await response.json();
+                socket.emit('updateLikes', { postId: updatedPost.id, likes: updatedPost.likes, likedBy: updatedPost.likedBy });
+                loadPosts(currentPage); // Reload posts to update the like count
+            } catch (error) {
+                console.error('点赞操作失败:', error);
+            }
+        }
+        // Socket.io 事件监听
+        socket.on('updateLikes', (data) => {
+            const postElement = document.querySelector(`[data-post-id="${data.postId}"]`);
+            const likedUsers = postElement.querySelector('.liked-users');
+            likedUsers.innerHTML = data.likedBy.map(username => `<span>${username}</span>`).join(', ');
+        });
+
+        // 转发帖子
+        async function handleShare(postId) {
+            // 弹出输入框让用户输入额外内容
+            const additionalContent = prompt('请输入您要添加的内容（可选）：');
+            if (additionalContent === null) return; // 用户点击取消
+
+            try {
+                const response = await fetch(`/api/posts/${postId}/share`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: currentUser.id,
+                        additionalContent: additionalContent // 添加用户输入的额外内容
+                    })
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to share post');
+                }
+                const data = await response.json();
+
+                // 重新加载第一页的帖子
+                await loadPosts(1);
+
+                // 获取第一个帖子元素并平滑滚动到它的位置
+                const firstPost = document.querySelector('.post');
+                if (firstPost) {
+                    firstPost.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            } catch (err) {
+                console.error('Error sharing post:', err);
+            }
+        }
+
+        // Socket.io 事件监听
+        socket.on('updatePosts', (data) => {
+            if (currentPage === 1) {
+                loadPosts(1);
+            }
+        });
+
+        socket.on('newPost', (post) => {
+            const container = document.getElementById('posts-container');
+            const newPostElement = document.createElement('div');
+            newPostElement.className = 'post';
+            newPostElement.dataset.postId = post._id;
+            newPostElement.innerHTML = `
+                <div class="user-info">
+                    <img src="${post.avatar}" alt="Avatar" class="avatar" onclick="loadUserProfile('${post.userId}')">
+                    <span class="username" onclick="loadUserProfile('${post.userId}')" style="cursor: pointer;">${post.username}</span>
+                    <div class="post-meta">
+                        <span class="post-time">${new Date(post.createdAt).toLocaleString()}</span>
+                        <span class="post-ip">IP: ${post.ipAddress}</span>
+                    </div>
+                </div>
+                <div class="post-content">
+                    <p>${post.content}</p>
+                    ${post.image ? `<img src="${post.image}" alt="Post Image">` : ''}
+                </div>
+                <div class="post-actions">
+                    <i class="fas fa-thumbs-up" onclick="handleLike('${post._id}', this)"></i>
+                    <i class="fas fa-comment" onclick="showCommentInput('${post._id}')"></i>
+                    ${post.userId !== currentUser.id ? `<i class="fas fa-share" onclick="handleShare('${post._id}')"></i>` : ''}
+                    ${post.userId === currentUser.id ? `<i class="fas fa-trash" onclick="deletePost('${post._id}')"></i>` : ''}
+                </div>
+                <div class="comments"></div>
+                <div class="comment-input" style="display: none;">
+                    <input type="text" placeholder="写下你的评论...">
+                    <button onclick="submitComment('${post._id}', this)">发送</button>
+                </div>
+            `;
+            container.insertBefore(newPostElement, container.firstChild);
+        });
+
+        socket.on('updateComments', (data) => {
+            const post = document.querySelector(`[data-post-id="${data.postId}"]`);
+            if (post) {
+                const commentsDiv = post.querySelector('.comments');
+                const newComment = document.createElement('div');
+                newComment.className = 'comment';
+                newComment.innerHTML = `
+                    <img src="${data.comment.avatar}" alt="Avatar" class="avatar-small">
+                    <div class="comment-content">
+                        <span class="username">${data.comment.username}</span>
+                        <p>${data.comment.content}</p>
+                        <div class="comment-meta">
+                            <span class="comment-time">${new Date(data.comment.createdAt).toLocaleString()}</span>
+                            <span class="comment-ip">IP: ${data.comment.ipAddress}</span>
+                        </div>
+                    </div>
+                    <div class="comment-actions">
+                        <i class="fas fa-share" onclick="handleCommentShare('${post._id}', '${data.comment._id}')" title="转发评论"></i>
+                    </div>
+                `;
+                commentsDiv.appendChild(newComment);
+            }
+        });
+
+        // 图片模态框功能
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        const closeModal = document.querySelector('.close-modal');
+
+        // 打开模态框
+        function openImageModal(imgSrc) {
+            modal.style.display = "block";
+            modalImg.src = imgSrc;
+        }
+
+        // 关闭模态框
+        closeModal.onclick = function () {
+            modal.style.display = "none";
+        }
+
+        // 点击模态框外部也可以关闭
+        modal.onclick = function (event) {
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        // 添加 ESC 键关闭模态框
+        document.addEventListener('keydown', function (event) {
+            if (event.key === "Escape" && modal.style.display === "block") {
+                modal.style.display = "none";
+            }
+        });
+
+        // 添加评论转发处理函数
+        async function handleCommentShare(postId, commentId) {
+            // 弹出输入框让用户输入额外内容
+            const additionalContent = prompt('请输入您要添加的内容（可选）：');
+            if (additionalContent === null) return; // 用户点击取消
+
+            try {
+                const response = await fetch(`/api/posts/${postId}/comments/${commentId}/share`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        userId: currentUser.id,
+                        additionalContent: additionalContent // 添加用户输入的额外内容
+                    })
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to share comment');
+                }
+                const data = await response.json();
+
+                // 重新加载第一页的帖子
+                await loadPosts(1);
+
+                // 获取第一个帖子元素并平滑滚动到它的位置
+                const firstPost = document.querySelector('.post');
+                if (firstPost) {
+                    firstPost.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            } catch (err) {
+                console.error('Error sharing comment:', err);
+            }
+        }
+
+        // 添加用户主页加载函数
+        async function loadUserProfile(userId) {
+            try {
+                const response = await fetch(`/api/users/${userId}/profile`);
+                const data = await response.json();
+
+                // 换到用户主页视图
+                const container = document.getElementById('forum-container');
+                container.innerHTML = `
+                    <div class="user-profile">
+                        <div class="profile-header">
+                            <img src="${data.user.avatar}" alt="${data.user.username}" class="profile-avatar">
+                            <h2>${data.user.username}</h2>
+                            <p>加入时间：${new Date(data.user.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <div class="user-posts">
+                            <h3>发布的帖子</h3>
+                            ${data.posts.map(post => `
+                                <div class="post" data-post-id="${post._id}">
+                                    <div class="post-content">
+                                        <p>${post.content}</p>
+                                        ${post.image ? `<img src="${post.image}" alt="Post Image" onclick="openImageModal(this.src)">` : ''}
+                                    </div>
+                                    <div class="post-stats">
+                                        <span>${post.likes} 赞</span>
+                                        <span>${post.shares} 转发</span>
+                                        <span>${post.comments.length} 评论</span>
+                                    </div>
+                                    ${currentUser.id === userId ? `
+                                        <button onclick="deleteUserPost('${post._id}')" class="delete-btn">删除</button>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button class="back-btn" onclick="returnToForum()">返回论坛</button>
+                    </div>
+                `;
+            } catch (err) {
+                console.error('Error loading user profile:', err);
+            }
+        }
+
+        // 添加返回论坛的函数
+        async function returnToForum() {
+            // 重置论坛容器
+            const container = document.getElementById('forum-container');
+            container.innerHTML = `
+                <h1>论坛</h1>
+                <form id="post-form">
+                    <div class="input-container">
+                        <input type="text" id="post-content" placeholder="分享美好生活......" required>
+                    </div>
+                    <div class="button-container">
+                        <input type="file" id="post-image" accept="image/*">
+                        <label for="post-image">选择图片</label>
+                        <button type="submit">发送</button>
+                    </div>
+                </form>
+                <div id="posts-container"></div>
+                <div class="pagination" id="pagination"></div>
+            `;
+
+            // 重新加载帖子
+            await loadPosts(1);
+        }
+
+        // 添加新的删除函数专门用于用户主页
+        async function deleteUserPost(postId) {
+            if (!confirm('确定要删除这条帖子吗？')) return;
+
+            try {
+                const response = await fetch(`/api/posts/${postId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete post');
+                }
+
+                // 删除成功后重新加载用户主页
+                await loadUserProfile(currentUser.id);
+            } catch (err) {
+                console.error('Error deleting post:', err);
+            }
+        }
+
+        // 初始加载
+        loadPosts();
+    </script>
+</body>
+
+</html>

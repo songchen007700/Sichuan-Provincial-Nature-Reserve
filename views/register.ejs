@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .left {
+      flex: 1;
+      background: url('/bg.jpg') no-repeat center center;
+      background-size: cover;
+    }
+
+    .right {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #8c8e66;
+      position: relative;
+    }
+
+    form {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+      z-index: 1;
+      position: relative;
+    }
+
+    h2 {
+      text-align: center;
+      color: #4e5535;
+    }
+
+    label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #4e5535;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      width: 100%;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #3b4431;
+    }
+
+    .error {
+      color: #e74c3c;
+      font-size: 14px;
+      margin-top: -10px;
+      margin-bottom: 15px;
+    }
+
+    .success {
+      color: #2ecc71;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+
+    .cursor {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background-color: #4e5535;
+      border-radius: 50%;
+      pointer-events: none;
+      transition: transform 0.1s ease;
+    }
+
+    #particles-js {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .password-container {
+      position: relative;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+
+    .password-container input {
+      margin-bottom: 0;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: #666;
+      pointer-events: all;
+      z-index: 2;
+    }
+
+    .toggle-password:hover {
+      color: #4e5535;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/particles.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+
+<body>
+  <div class="left"></div>
+  <div class="right">
+    <div id="particles-js"></div>
+    <form id="registerForm">
+      <h2>注册</h2>
+      <label for="username">用户名称</label>
+      <input type="text" id="username" name="username" required>
+
+      <label for="email">电子邮件</label>
+      <input type="email" id="email" name="email" required>
+
+      <label for="password">密码</label>
+      <div class="password-container">
+        <input type="password" id="password" name="password" required>
+        <i class="toggle-password fas fa-eye-slash" onclick="togglePassword('password')"></i>
+      </div>
+
+      <div id="message" class="error"></div>
+      <button type="submit">注册</button>
+    </form>
+  </div>
+
+  <div class="cursor" id="cursor"></div>
+
+  <script>
+    particlesJS.load('particles-js', 'particles.json', function () {
+      console.log('particles.js loaded - callback');
+    });
+
+    const form = document.getElementById('registerForm');
+    const messageDiv = document.getElementById('message');
+    const cursor = document.getElementById('cursor');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const username = document.getElementById('username').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const response = await axios.post('http://localhost:3000/api/register', {
+          username,
+          email,
+          password
+        });
+
+        messageDiv.textContent = response.data.message;
+        messageDiv.className = 'success';
+        form.reset();
+
+        // 跳转到登录页面
+        setTimeout(() => {
+          window.location.href = '/Login.html';
+        }, 500);
+      } catch (error) {
+        if (error.response) {
+          messageDiv.textContent = error.response.data.message || '注册失败';
+        } else {
+          messageDiv.textContent = '连接服务器失败';
+        }
+        messageDiv.className = 'error';
+      }
+    });
+
+    document.addEventListener('mousemove', (e) => {
+      cursor.style.transform = `translate(${e.clientX}px, ${e.clientY}px)`;
+    });
+
+    // 添加切换密码显示的函数
+    function togglePassword(inputId) {
+      const passwordInput = document.getElementById(inputId);
+      const toggleIcon = document.querySelector('.toggle-password');
+
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+      } else {
+        passwordInput.type = 'password';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+      }
+    }
+  </script>
+</body>
+
+</html>

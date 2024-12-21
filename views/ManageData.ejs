@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理后台</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    .container {
+      display: flex;
+      height: 100vh;
+    }
+
+    .left {
+      flex: 1;
+      background: url('/bg.jpg') no-repeat center center;
+      background-size: cover;
+    }
+
+    .right {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #8c8e66;
+    }
+
+    #loginContainer {
+      max-width: 400px;
+      width: 100%;
+      padding: 20px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    #loginContainer h2 {
+      text-align: center;
+      color: #6b8a78;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+    }
+
+    .form-group button {
+      width: 100%;
+      padding: 10px;
+      background-color: #2ecc71;
+      border: none;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .form-group button:hover {
+      background-color: #27ae60;
+    }
+
+    #dashboard {
+      display: none;
+      padding: 20px;
+    }
+
+    #dashboard h1 {
+      text-align: center;
+      color: #6b8a78;
+    }
+
+    #logoutButton,
+    #exportCsvButton {
+      padding: 10px;
+      background-color: #6b8a78;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+
+    #logoutButton:hover,
+    #exportCsvButton:hover {
+      background-color: #5a7864;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    table,
+    th,
+    td {
+      border: 1px solid #ddd;
+    }
+
+    th,
+    td {
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #6b8a78;
+      color: white;
+    }
+
+    .actions button {
+      margin: 5px;
+      padding: 5px 10px;
+      background-color: #6b8a78;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .actions button:hover {
+      background-color: #5a7864;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container" id="loginSection">
+    <div class="left"></div>
+    <div class="right">
+      <div id="loginContainer">
+        <h2>管理员登录</h2>
+        <form id="loginForm">
+          <div class="form-group">
+            <label for="password">密码</label>
+            <input type="password" id="password" placeholder="输入密码" required>
+          </div>
+          <div class="form-group">
+            <label for="question1">问题1：最喜欢的颜色</label>
+            <select id="question1" required>
+              <option value="red">红色</option>
+              <option value="yellow">黄色</option>
+              <option value="blue">蓝色</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="question2">问题2：数字</label>
+            <input type="text" id="question2" required>
+          </div>
+          <div class="form-group">
+            <label for="question3">问题3：团队成员数量</label>
+            <input type="number" id="question3" required>
+          </div>
+          <div class="form-group">
+            <button type="submit">登录</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="dashboard">
+    <h1>管理后台</h1>
+    <button id="logoutButton">退出登录</button>
+    <button id="exportCsvButton" style="margin-top: 10px;">导出用户数据 (CSV)</button>
+    <div>
+      <h2>用户列表</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>用户名</th>
+            <th>角色</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="userTable"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const apiBase = 'http://localhost:3000/api'; // 修改为您的后端 URL
+    const adminPassword = '123456'; // 默认管理员密码
+
+    // 元素
+    const loginSection = document.getElementById('loginSection');
+    const dashboard = document.getElementById('dashboard');
+    const loginForm = document.getElementById('loginForm');
+    const userTable = document.getElementById('userTable');
+    const logoutButton = document.getElementById('logoutButton');
+    const exportCsvButton = document.getElementById('exportCsvButton');
+
+    // 获取用户列表
+    async function fetchUsers() {
+      try {
+        const response = await fetch(`${apiBase}/users`);
+        if (!response.ok) throw new Error('获取用户列表失败');
+        const users = await response.json();
+        renderUserTable(users);
+      } catch (error) {
+        console.error(error);
+        alert('加载用户列表时出错');
+      }
+    }
+
+    // 渲染用户表格
+    function renderUserTable(users) {
+      userTable.innerHTML = '';
+      users.forEach(user => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${user.username}</td>
+          <td>${user.role}</td>
+          <td>${user.status}</td>
+          <td class="actions">
+            <button onclick="changeRole('${user._id}', '${user.username}')">修改角色</button>
+            <button onclick="toggleStatus('${user._id}', '${user.status}', '${user.username}')">${user.status === 'active' ? '禁用' : '启用'}</button>
+            <button onclick="deleteUser('${user._id}', '${user.username}')">删除</button>
+          </td>
+        `;
+        userTable.appendChild(row);
+      });
+    }
+
+    // 修改用户角色
+    async function changeRole(userId, username) {
+      if (username === 'admin') {
+        alert('不能修改管理员角色');
+        return;
+      }
+
+      const newRole = prompt('请输入新的角色 (admin, user, guest):');
+      if (!newRole) return;
+
+      try {
+        const response = await fetch(`${apiBase}/users/${userId}/role`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ role: newRole }),
+        });
+        if (!response.ok) throw new Error('修改角色失败');
+        alert('角色已更新');
+        fetchUsers();
+      } catch (error) {
+        console.error(error);
+        alert('修改角色时出错');
+      }
+    }
+
+    // 切换用户状态
+    async function toggleStatus(userId, currentStatus, username) {
+      if (username === 'admin') {
+        alert('不能修改管理员状态');
+        return;
+      }
+
+      try {
+        const response = await fetch(`${apiBase}/users/${userId}/status`, {
+          method: 'PUT',
+        });
+        if (!response.ok) throw new Error('修改状态失败');
+        alert('状态已更新');
+        fetchUsers();
+      } catch (error) {
+        console.error(error);
+        alert('修改状态时出错');
+      }
+    }
+
+    // 删除用户
+    async function deleteUser(userId, username) {
+      if (username === 'admin') {
+        alert('不能删除管理员');
+        return;
+      }
+
+      if (!confirm('确定要删除该用户吗？')) return;
+
+      try {
+        const response = await fetch(`${apiBase}/users/${userId}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('删除用户失败');
+        alert('用户已删除');
+        fetchUsers();
+      } catch (error) {
+        console.error(error);
+        alert('删除用户时出错');
+      }
+    }
+
+    // 导出用户数据为 CSV
+    exportCsvButton.addEventListener('click', async () => {
+      try {
+        const response = await fetch(`${apiBase}/export`);
+        if (!response.ok) throw new Error('导出数据失败');
+        const csvData = await response.text();
+
+        // 创建下载链接
+        const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = '用户数据.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } catch (error) {
+        console.error(error);
+        alert('导出用户数据时出错');
+      }
+    });
+
+    // 登录表单提交
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const password = document.getElementById('password').value;
+      const question1 = document.getElementById('question1').value;
+      const question2 = document.getElementById('question2').value;
+      const question3 = document.getElementById('question3').value;
+
+      if (password === adminPassword && question1 === 'blue' && question2 === '0510' && question3 === '6') {
+        alert('登录成功');
+        loginSection.style.display = 'none';
+        dashboard.style.display = 'block';
+        fetchUsers();
+      } else {
+        alert('答案错误，请重试');
+      }
+    });
+
+    // 退出登录
+    logoutButton.addEventListener('click', () => {
+      loginSection.style.display = 'flex';
+      dashboard.style.display = 'none';
+    });
+  </script>
+</body>
+
+</html>

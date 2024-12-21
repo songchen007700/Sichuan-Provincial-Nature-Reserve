@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>四川省自然保护区地理信息查询系统</title>
+    <style>
+        /* 全局样式 */
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100%;
+            width: 100%;
+            background-color: #2c3e50;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 固定顶部导航栏样式 */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #34495e;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .header .logo {
+            height: 40px;
+            width: auto;
+            cursor: pointer;
+        }
+
+        .header .user-info {
+            display: flex;
+            align-items: center;
+        }
+
+        .header .user-info img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+            cursor: pointer;
+        }
+
+        .header .user-info span {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        /* 主内容区样式 */
+        .main-content {
+            display: flex;
+            flex-grow: 1;
+            margin-top: 60px;
+            /* 使内容不被固定的导航栏遮挡 */
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 200px;
+            background-color: #34495e;
+            color: white;
+            padding: 20px;
+            position: fixed;
+            top: 60px;
+            /* 侧边栏从导航栏下方开始 */
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .menu-section {
+            flex-grow: 1;
+        }
+
+        .menu-item {
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .menu-btn {
+            background-color: transparent;
+            color: white;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            padding: 10px;
+        }
+
+        .submenu {
+            display: none;
+            background-color: #2c3e50;
+            padding-left: 20px;
+            margin-top: 5px;
+            border-left: 2px solid #555;
+        }
+
+        .submenu a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 5px 0;
+        }
+
+        .submenu a:hover {
+            background-color: #555;
+        }
+
+        .menu-item:focus-within .submenu,
+        .menu-item:hover .submenu {
+            display: block;
+        }
+
+        .logout-btn {
+            margin-top: 20px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+        }
+
+        .logout-btn:hover {
+            background-color: #c0392b;
+        }
+
+        /* 地图容器样式 */
+        .map-container {
+            flex-grow: 1;
+            margin-left: 200px;
+            height: 100%;
+        }
+
+        #container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-btn {
+            background-color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 固定导航栏 -->
+    <div class="header">
+        <!-- 左侧显示logo -->
+        <img src="Add a subheading.png" alt="Logo" class="logo" onclick="window.location.href='dt.html'">
+
+        <!-- 右侧显示用户头像和名称 -->
+        <div class="user-info">
+            <img id="user-avatar" src="default-avatar.png" alt="用户头像" title="点击更换头像">
+            <span id="username">未登录</span>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <nav class="sidebar">
+            <div class="menu-section">
+                <header>
+                    <img id="user-avatar" src="default-avatar.png" alt="用户头像" title="点击更换头像">
+                    <input type="file" id="avatar-input" accept="image/*" style="display:none;">
+                    <div class="user-info">
+                        <strong id="username">未登录</strong>
+                    </div>
+                    <button class="logout-btn" id="logoutButton">登出</button>
+                </header>
+                <div class="menu-item" tabindex="0">
+                    <button class="menu-btn">首页 ▼</button>
+                    <div class="submenu">
+                        <a href="Register.html">注册</a>
+                        <a href="Login.html">登录</a>
+                    </div>
+                </div>
+                <div class="menu-item" tabindex="0">
+                    <button class="menu-btn">后台用户管理 ▼</button>
+                    <div class="submenu">
+                        <a href="Admin.html">后台用户管理</a>
+                        <a href="Changepassword.html">密码管理</a>
+                    </div>
+                </div>
+                <div class="menu-item" tabindex="0">
+                    <button class="menu-btn">自然保护区展示 ▼</button>
+                    <div class="submenu">
+                        <a href="Navigation.html">自然保护区展示</a>
+                    </div>
+                </div>
+                <div class="menu-item" tabindex="0">
+                    <button class="menu-btn">天气查询 ▼</button>
+                    <div class="submenu">
+                        <a href="Weather.html">自然保护区天气查询</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <main class="map-container">
+            <div id="container"></div>
+            <div class="map-controls">
+                <button class="control-btn">+</button>
+                <button class="control-btn">-</button>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://api.map.baidu.com/api?v=3.0&ak=Chxx8mpsvDZrmvqrupmqbNBBmaGRXba2"></script>
+    <script>
+        const apiUrl = 'http://localhost:3000/api';
+
+        // 加载用户数据
+        function loadUserData() {
+            const user = JSON.parse(localStorage.getItem('loggedInUser'));
+            if (user) {
+                document.getElementById('username').textContent = user.username;
+                document.getElementById('user-avatar').src = user.avatar || 'default-avatar.png';
+            }
+        }
+
+        // 处理头像上传和预览
+        const avatarInput = document.getElementById('avatar-input');
+        const userAvatar = document.getElementById('user-avatar');
+
+        userAvatar.addEventListener('click', () => {
+            avatarInput.click(); // 打开文件选择器
+        });
+
+        avatarInput.addEventListener('change', async () => {
+            const file = avatarInput.files[0];
+            if (file) {
+                // 预览所选的图片
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    userAvatar.src = e.target.result; // 设置图片预览
+                };
+                reader.readAsDataURL(file);
+
+                // 上传文件到服务器
+                const formData = new FormData();
+                formData.append('avatar', file);
+
+                try {
+                    const user = JSON.parse(localStorage.getItem('loggedInUser'));
+                    const response = await fetch(`${apiUrl}/users/${user.id}/avatar`, {
+                        method: 'PUT',
+                        body: formData,
+                    });
+
+                    if (response.ok) {
+                        const updatedUser = await response.json();
+                        localStorage.setItem('loggedInUser', JSON.stringify(updatedUser));
+                        alert('头像已更新');
+                    } else {
+                        alert('头像更新失败');
+                    }
+                } catch (error) {
+                    console.error('上传头像时出错:', error);
+                }
+            }
+        });
+
+        // 登出功能
+        const logoutButton = document.getElementById('logoutButton');
+        logoutButton.addEventListener('click', () => {
+            localStorage.removeItem('loggedInUser');
+            window.location.href = 'Login.html'; // 重定向到登录页面
+        });
+
+        // 初始化
+        loadUserData();
+    </script>
+</body>
+
+</html>
